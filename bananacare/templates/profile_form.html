@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block content %}
+<form method="post" class="card form-card wide"><h1>Farm and farmer record</h1><div class="form-grid">
+<label>Full name *<input name="full_name" value="{{ profile.full_name }}" required></label><label>Contact number *<input name="contact_number" value="{{ profile.contact_number }}" required></label>
+<label>Farm location *<input name="location" value="{{ profile.location }}" required></label><label>Farm size (hectares) *<input type="number" min="0.01" step="0.01" name="farm_size" value="{{ profile.farm_size }}" required></label>
+<label>Banana variety *<input name="banana_variety" value="{{ profile.banana_variety }}" required></label><label>Planting date<input type="date" name="planting_date" value="{{ profile.planting_date or '' }}"></label>
+<label>Estimated production (kg)<input type="number" min="0" step="0.01" name="estimated_production" value="{{ profile.estimated_production or '' }}"></label></div>
+<div class="actions"><button class="btn primary">Save changes</button><a class="btn secondary" href="{{ url_for('main.farmer_dashboard') }}">Cancel</a></div></form>{% endblock %}

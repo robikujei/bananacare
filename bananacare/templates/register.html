@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Farmer Registration · BananaCare{% endblock %}
+{% block content %}
+<form method="post" class="card form-card wide">
+  <span class="eyebrow">Farmer registration</span><h1>Create your farm record</h1>
+  <div class="form-grid">
+    <label>Full name *<input name="full_name" value="{{ data.get('full_name','') }}" required></label>
+    <label>Contact number *<input name="contact_number" value="{{ data.get('contact_number','') }}" required></label>
+    <label>Farm location *<input name="location" value="{{ data.get('location','') }}" required></label>
+    <label>Farm size (hectares) *<input type="number" min="0.01" step="0.01" name="farm_size" value="{{ data.get('farm_size','') }}" required></label>
+    <label>Banana variety *<input name="banana_variety" value="{{ data.get('banana_variety','') }}" required></label>
+    <label>Username *<input name="username" value="{{ data.get('username','') }}" required></label>
+    <label>Password *<input type="password" minlength="6" name="password" required></label>
+  </div>
+  <button class="btn primary" type="submit">Register farmer</button>
+</form>
+{% endblock %}
+

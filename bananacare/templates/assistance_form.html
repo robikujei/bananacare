@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<form method="post" class="card form-card"><span class="eyebrow">Module 3</span><h1>Request assistance</h1>
+<label>Assistance type *<select name="assistance_type" required><option value="">Select assistance</option>{% for assistance_type in assistance_types %}<option>{{ assistance_type }}</option>{% endfor %}</select></label>
+<label>Request details<textarea name="recommendation" rows="5" placeholder="Explain the support you need..."></textarea></label>
+<div class="actions"><button class="btn primary">Submit request</button><a class="btn secondary" href="{{ url_for('main.farmer_dashboard') }}">Cancel</a></div></form>{% endblock %}

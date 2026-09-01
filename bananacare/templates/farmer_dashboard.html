@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Farmer Dashboard · BananaCare{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Farmer dashboard</span><h1>Hello, {{ profile.full_name }}</h1><p>{{ profile.location }} · {{ profile.banana_variety }}</p></div><a class="btn secondary" href="{{ url_for('main.farmer_profile') }}">Edit farm profile</a></div>
+<section class="stats">
+  <article><small>Farm size</small><strong>{{ profile.farm_size }} ha</strong></article>
+  <article><small>Total reports</small><strong>{{ reports|length }}</strong></article>
+  <article><small>Open reports</small><strong>{{ reports|rejectattr('status','equalto','Resolved')|list|length }}</strong></article>
+  <article><small>Pending assistance</small><strong>{{ requests|rejectattr('status','equalto','Completed')|list|length }}</strong></article>
+</section>
+<div class="section-head"><div><h2>Farm condition reports</h2><p>Track reported diseases, pests, and other field concerns.</p></div><a class="btn primary" href="{{ url_for('main.new_report') }}">+ New report</a></div>
+<div class="table-wrap"><table><thead><tr><th>Date</th><th>Problem</th><th>Affected</th><th>Status</th><th>Staff remarks</th></tr></thead><tbody>
+{% for report in reports %}<tr><td>{{ report.date_reported }}</td><td><strong>{{ report.problem_type }}</strong><small>{{ report.description }}</small></td><td>{{ report.affected_area }} ha</td><td><span class="badge">{{ report.status }}</span></td><td>{{ report.remarks or '—' }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No reports yet.</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="section-head"><div><h2>Assistance requests</h2><p>View support requests and recommendations.</p></div><a class="btn primary" href="{{ url_for('main.new_assistance') }}">+ Request assistance</a></div>
+<div class="table-wrap"><table><thead><tr><th>Requested</th><th>Type</th><th>Status</th><th>Date provided</th><th>Recommendation / Notes</th></tr></thead><tbody>
+{% for item in requests %}<tr><td>{{ item.date_requested }}</td><td><strong>{{ item.assistance_type }}</strong></td><td><span class="badge">{{ item.status }}</span></td><td>{{ item.date_provided or '—' }}</td><td>{{ item.recommendation or '—' }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No assistance requests yet.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
+

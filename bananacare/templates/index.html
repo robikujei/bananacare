@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <span class="eyebrow">Simple records. Healthier farms.</span>
+    <h1>Monitor banana farms and coordinate support in one place.</h1>
+    <p>BananaCare is a lightweight information system for recording farm details, reporting field conditions, and tracking agricultural assistance.</p>
+    <div class="actions">
+      <a class="btn primary" href="{{ url_for('auth.farmer_login') }}">Farmer portal</a>
+      <a class="btn secondary" href="{{ url_for('auth.admin_login') }}">Admin portal</a>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="banana-mark">🍌</div>
+    <h3>Three connected modules</h3>
+    <p>Farm records · Condition monitoring · Assistance tracking</p>
+  </div>
+</section>
+<section class="feature-grid">
+  <article><span>01</span><h3>Farm Records</h3><p>Maintain reusable farmer, location, variety, size, and production information.</p></article>
+  <article><span>02</span><h3>Condition Reports</h3><p>Document disease or pest observations and follow each case through resolution.</p></article>
+  <article><span>03</span><h3>Assistance</h3><p>Request farm visits or supplies and review recommendations from staff.</p></article>
+</section>
+{% endblock %}
+

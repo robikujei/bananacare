@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+<form method="post" class="card form-card"><span class="eyebrow">Module 2</span><h1>Report a farm condition</h1>
+<label>Problem type *<select name="problem_type" required><option value="">Select a problem</option>{% for problem_type in problem_types %}<option>{{ problem_type }}</option>{% endfor %}</select></label>
+<label>Affected area (hectares) *<input type="number" min="0.01" step="0.01" name="affected_area" required></label>
+<label>Description *<textarea name="description" rows="5" required placeholder="Describe what you observed..."></textarea></label>
+<div class="actions"><button class="btn primary">Submit report</button><a class="btn secondary" href="{{ url_for('main.farmer_dashboard') }}">Cancel</a></div></form>{% endblock %}
