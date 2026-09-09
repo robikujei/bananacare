@@ -1,3 +1,4 @@
+# models.py — unchanged (no schema edits made, as instructed)
 from datetime import UTC, date, datetime
 
 from flask_login import UserMixin

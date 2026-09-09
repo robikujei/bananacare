@@ -1,19 +1,31 @@
+# main.py
 from datetime import date
 from functools import wraps
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 
 from . import db
 from .constants import (
     ADMIN_ROLE,
+    ASSISTANCE_COMPLETED,
     ASSISTANCE_STATUSES,
     ASSISTANCE_TYPES,
     FARMER_ROLE,
+    MAX_LENGTHS,
     PROBLEM_TYPES,
     REPORT_STATUSES,
 )
-from .forms import optional_date, optional_number, positive_number, text_field, text_fields
+from .forms import (
+    bounded_text,
+    choice,
+    optional_date,
+    optional_number,
+    positive_number,
+    text_field,
+    text_fields,
+)
 from .models import Assistance, DiseaseReport, FarmerProfile
 
 main_bp = Blueprint("main", __name__)
@@ -93,20 +105,38 @@ def farmer_profile():
             flash("All required fields must be completed.", "danger")
         else:
             try:
-                profile.full_name = fields["full_name"]
-                profile.contact_number = fields["contact_number"]
-                profile.location = fields["location"]
-                profile.farm_size = positive_number(fields["farm_size"])
-                profile.banana_variety = fields["banana_variety"]
-                profile.planting_date = optional_date(fields["planting_date"])
-                profile.estimated_production = optional_number(
-                    fields["estimated_production"]
+                full_name = bounded_text(
+                    fields["full_name"], "Full name", MAX_LENGTHS["full_name"]
                 )
+                contact_number = bounded_text(
+                    fields["contact_number"],
+                    "Contact number",
+                    MAX_LENGTHS["contact_number"],
+                )
+                location = bounded_text(
+                    fields["location"], "Location", MAX_LENGTHS["location"]
+                )
+                banana_variety = bounded_text(
+                    fields["banana_variety"],
+                    "Banana variety",
+                    MAX_LENGTHS["banana_variety"],
+                )
+                farm_size = positive_number(fields["farm_size"])
+                planting_date = optional_date(fields["planting_date"])
+                estimated_production = optional_number(fields["estimated_production"])
+
+                profile.full_name = full_name
+                profile.contact_number = contact_number
+                profile.location = location
+                profile.farm_size = farm_size
+                profile.banana_variety = banana_variety
+                profile.planting_date = planting_date
+                profile.estimated_production = estimated_production
                 db.session.commit()
                 flash("Farm profile updated.", "success")
                 return redirect(url_for("main.farmer_dashboard"))
-            except (ValueError, TypeError):
-                flash("Enter valid positive numbers and a valid date.", "danger")
+            except (ValueError, TypeError) as exc:
+                flash(str(exc) or "Enter valid values for every field.", "danger")
 
     return render_template("profile_form.html", profile=profile)
 
@@ -117,12 +147,12 @@ def new_report():
     if request.method == "POST":
         try:
             affected_area = positive_number(text_field("affected_area"))
-            problem_type = text_field("problem_type")
+            problem_type = choice(text_field("problem_type"), PROBLEM_TYPES, "problem type")
             description = text_field("description")
             farm_size = float(current_user.profile.farm_size)
 
-            if affected_area > farm_size or not problem_type or not description:
-                raise ValueError
+            if affected_area > farm_size or not description:
+                raise ValueError("Affected area cannot exceed farm size.")
 
             report = DiseaseReport(
                 farmer_id=current_user.profile.id,
@@ -137,8 +167,8 @@ def new_report():
             return redirect(url_for("main.farmer_dashboard"))
         except ValueError:
             flash(
-                "Complete every field. Affected area must be positive and cannot "
-                "exceed farm size.",
+                "Complete every field with a valid problem type. Affected area "
+                "must be positive and cannot exceed farm size.",
                 "danger",
             )
 
@@ -149,12 +179,14 @@ def new_report():
 @role_required(FARMER_ROLE)
 def new_assistance():
     if request.method == "POST":
-        assistance_type = text_field("assistance_type")
-        request_details = text_field("recommendation")
-
-        if not assistance_type:
-            flash("Please select an assistance type.", "danger")
+        try:
+            assistance_type = choice(
+                text_field("assistance_type"), ASSISTANCE_TYPES, "assistance type"
+            )
+        except ValueError:
+            flash("Please select a valid assistance type.", "danger")
         else:
+            request_details = text_field("recommendation")
             assistance = Assistance(
                 farmer_id=current_user.profile.id,
                 assistance_type=assistance_type,
@@ -172,8 +204,19 @@ def new_assistance():
 @role_required(ADMIN_ROLE)
 def admin_dashboard():
     farmers = FarmerProfile.query.order_by(FarmerProfile.full_name).all()
-    reports = DiseaseReport.query.order_by(DiseaseReport.id.desc()).all()
-    assistance_records = Assistance.query.order_by(Assistance.id.desc()).all()
+    # Eager-load the farmer relationship: the dashboard shows a farmer name
+    # on every report/assistance row, so without this each row lazily fires
+    # its own SELECT (classic N+1 — e.g. 50 reports = 51 queries instead of 2).
+    reports = (
+        DiseaseReport.query.options(joinedload(DiseaseReport.farmer))
+        .order_by(DiseaseReport.id.desc())
+        .all()
+    )
+    assistance_records = (
+        Assistance.query.options(joinedload(Assistance.farmer))
+        .order_by(Assistance.id.desc())
+        .all()
+    )
 
     return render_template(
         "admin_dashboard.html",
@@ -210,7 +253,15 @@ def update_assistance(request_id):
 
     item.status = status
     item.recommendation = text_field("recommendation")
-    item.date_provided = date.today() if status == ASSISTANCE_STATUSES[-1] else None
+
+    if status == ASSISTANCE_COMPLETED:
+        # Only stamp the completion date the first time it's marked
+        # Completed — see Changes below for why this matters.
+        if item.date_provided is None:
+            item.date_provided = date.today()
+    else:
+        item.date_provided = None
+
     db.session.commit()
     flash("Assistance record updated.", "success")
     return redirect(url_for("main.admin_dashboard"))
